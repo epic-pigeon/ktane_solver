@@ -444,38 +444,187 @@ function solveNotComplicatedWires(bombInfo, color, led, star) {
 class NotWhosOnFirstSolver {
     constructor() {
         this.stage = 0;
+        this.displayWords = [];
+        this.pressedButtons = [];
+    }
+    getStageOnePosition(word) {
+        let wordTable = [
+            `THERE\nNOTHING\nUR\nYOUR\nSAY`,
+            `SEE\nHOLD ON\nREED\nYES\nLEAD`,
+            `FIRST\nSAYS\nC\nTHEIR\nU`,
+            `THEY ARE\nRED\nDISPLAY\nBLANK\nOK`,
+            `THEY’RE\nCEE\nYOU’RE\nYOU ARE\nLED`,
+            `READ\nNO\nOKAY\nLEED\nYOU`
+        ];
+        return Object.keys(wordTable).find(key => wordTable[key].split("\n").indexOf(word) !== -1);
     }
     solveFirstStage(displayWord) {
         if (this.stage !== 0) throw new Error(`This method should only be called on the first stage`);
         this.stage++;
-        let wordTable = [
-            `THERE
-NOTHING
-UR
-YOUR
-SAY`, `SEE
-HOLD ON
-REED
-YES
-LEAD`, `FIRST
-SAYS
-C
-THEIR
-U`, `THEY ARE
-RED
-DISPLAY
-BLANK
-OK`, `THEY’RE
-CEE
-YOU’RE
-YOU ARE
-LED`, `READ
-NO
-OKAY
-LEED
-YOU`
+        this.displayWords.push(displayWord);
+        return [this.getStageOnePosition(displayWord)];
+    }
+    getStageTwoChartPosition(number) {
+        let positionTable = [
+            [52, 3, 5, 44, 2, 16, 46, 60, 29, 45],
+            [37, 4, 59, 10, 24, 47, 43, 38, 39, 53],
+            [9, 19, 51, 40, 14, 17, 6, 7, 26, 31],
+            [18, 13, 20, 57, 55, 56, 11, 30, 1, 27],
+            [48, 49, 23, 35, 34, 36, 58, 22, 33, 21],
+            [28, 42, 12, 54, 25, 15, 50, 41, 8, 32]
         ];
-        let position = Object.keys(wordTable).find(key => wordTable[key].split("\n").indexOf(displayWord) !== -1);
-        return {position: position};
+        return Object.keys(positionTable).find(key => positionTable[key].indexOf(number) !== -1);
+    }
+    solveSecondStage(prevPosition, prevLabel, displayWord) {
+        if (this.stage !== 1) throw new Error(`This method should only be called on the second stage`);
+        this.stage++;
+        this.displayWords.push(displayWord);
+        this.pressedButtons.push({position: prevPosition, label: prevLabel});
+        let letterTable = [
+            `YGIVZDUQJAEHFBRCWSXMLNTPO`,
+            `UWZLYGCPDTSQVNKOHMREAJXFI`,
+            `AISZBUDSYKANOJXRMQLHETGIP`,
+            `EMVVXCSWMKUFNJYPFXBATIRGQ`,
+            `OCUGZAOWPCBLFTVUMZYDJMXKI`,
+            `LGKYCQBRAHOJKUPDPFZSITLXG`,
+            `TCEXQALNDUFKYRPVGBJBSIWOH`,
+            `YEOUJVMZPRWLDACGRSKXFNBTQ`,
+            `CHFVONTLRUJYESBPQAWMDZKXG`,
+            `QGWIPXLDZYVCFRTMEBKHSNUOA`,
+            `JZULXPIVGYTEFBORCNSWKHMQD`,
+            `IRBDMGYJTOQURCNAEPHVIKWZS`,
+            `EZESXPWLJDAVURCHNGBIHOTQK`,
+            `ODXPUJKZOLBTXGEDRQHVICIWY`,
+            `KSUQUTHOKJOLJTGZVCFMTULXR`,
+            `KYBBCTBCIMRQSOXUCFZDFKTQN`,
+            `SKUWLPEHSQMNIVAYXGJWZFHKB`,
+            `KDBEVUQTEMMZHSIWYBMJUTNZQ`,
+            `JFNPMOIAJYDMIQHXCKLYORWUG`,
+            `SGIYDHBNWMXQUPZOELAKJCFRV`,
+            `YSPOAMLTNERFVXBCDHQJIKZWG`,
+            `JFXGRZEAMSEVOFQDSNBWPIYCL`,
+            `GAFLYDNGZROAPYUQHKDYWNFVW`,
+            `NVMZHTNFRJCODAWYWJLHABZEH`,
+            `PDLZXIAJPFNVREGNPDLSTMHSN`,
+            `ERWLGHQASBTVXICECFVPAXEVW`,
+        ];
+        let word1 = prevLabel.replace("'", "").replace(" ", "");
+        let word2 = displayWord.replace("'", "").replace(" ", "");
+        let result = 0;
+        for (let i = 0; i < word1.length || i < word2.length; i++) {
+            result += letterTable[word2[i%word2.length].charCodeAt(0)-0x41][word1[i%word1.length].charCodeAt(0)-0x41].charCodeAt(0) - 0x40;
+        }
+        result = result % 60 + 1;
+        this.stageTwoNumber = result;
+        return [this.getStageTwoChartPosition(result)];
+    }
+    getStageThreeDiagramPosition(button, displayWord) {
+        let descriptor = "";
+        if (button.position % 2 === 0) descriptor += "L";
+        if (button.label.replace("'", "").replace(" ", "").length % 2 === 0) descriptor += "E";
+        if ([...displayWord].filter(letter => ["A", "E", "I", "O", "U"].indexOf(letter) !== -1).length % 2 === 1) descriptor += "O";
+        if (!this.stageTwoNumber) throw new Error(`This method can only be called after stage 2`);
+        if ((function (num) {
+            for (let i = 2; i <= Math.sqrt(num); i++)
+                if(num % i === 0) return false;
+            return num > 1;
+        })(this.stageTwoNumber)) descriptor += "P";
+        return {
+            "": [0],
+            "P": [0, 1, 2, 3, 4, 5],
+            "O": [0, 1],
+            "OP": [5, 6],
+            "E": [1, 3, 5],
+            "EP": [5, 6],
+            "EO": [0, 2, 4],
+            "EOP": [2, 3, 4, 5],
+            "L": [button.position],
+            "LP": [button.position + (button.position % 2 ? 1 : -1)],
+            "LO": [2, 3],
+            "LOP": [0, 1, 2, 3],
+            "LE": [1],
+            "LEP": [3],
+            "LEO": [2],
+            "LEOP": [4],
+        }[descriptor];
+    }
+    getStageThreeReferencePosition(displayWord) {
+        return this.getStageOnePosition(displayWord);
+    }
+    solveThirdStage(prevPosition, prevLabel, referencePosition, referenceLabel, displayWord) {
+        if (this.stage !== 2) throw new Error(`This method should only be called on the third stage`);
+        this.stage++;
+        this.displayWords.push(displayWord);
+        this.pressedButtons.push({position: prevPosition, label: prevLabel});
+        return this.getStageThreeDiagramPosition(this.stageThreeReferenceButton = {position: referencePosition, label: referenceLabel}, displayWord)
+    }
+    solveFourthStage(prevPosition, prevLabel, buttons, displayWord) {
+        if (this.stage !== 3) throw new Error(`This method should only be called on the fourth stage`);
+        this.stage++;
+        this.displayWords.push(displayWord);
+        this.pressedButtons.push({position: prevPosition, label: prevLabel});
+        let visited = [0, 0, 0, 0, 0, 0];
+        let position = this.thirdStageReferenceButton.position;
+        while (true) {
+            let label = buttons[position];
+            if (`WHAT?\nPRESS\nYOU\nLEFT\nWAIT\nOKAY\nNO`.split("\n").indexOf(label) !== -1) {
+                position -= 2;
+                if (position < 0) position += 6;
+            }
+            if (`YOUR\nHOLD\nYES\nMIDDLE\nLIKE\nUHHH\nDONE`.split("\n").indexOf(label) !== -1) {
+                position += 2;
+                if (position >= 6) position -= 6;
+            }
+            if (`BLANK\nRIGHT\nSURE\nYOU’RE\nREADY\nU\nUH UH\nWHAT\nUH HUH\nUR\nNEXT\nNOTHING\nFIRST\nYOU ARE`.split("\n").indexOf(label) !== -1) {
+                position = position + (position % 2 ? 1 : -1)
+            }
+            visited[position]++;
+            if (visited[position] > 1) break;
+        }
+        return this.getStageThreeDiagramPosition(this.stageFourReferenceButton = {position, label: buttons[position]}, displayWord);
+    }
+    solveFifthStage(prevPosition, prevLabel, displayWord) {
+        if (this.stage !== 3) throw new Error(`This method should only be called on the fourth stage`);
+        this.stage++;
+        this.displayWords.push(displayWord);
+        this.pressedButtons.push({position: prevPosition, label: prevLabel});
+        let numTable = {
+            "READY": [1, 2, 3, 4, 5, 6],
+            "FIRST": [4, 5, 6, 2, 1, 3],
+            "NO": [2, 6, 4, 1, 3, 5],
+            "BLANK": [3, 1, 5, 2, 4, 6],
+            "NOTHING": [5, 4, 1, 2, 3, 6],
+            "YES": [6, 3, 4, 5, 2, 1],
+            "WHAT": [2, 3, 6, 1, 5, 4],
+            "UHHH": [5, 1, 4, 3, 6, 2],
+            "LEFT": [2, 4, 6, 1, 5, 3],
+            "RIGHT": [1, 6, 3, 4, 5, 2],
+            "MIDDLE": [2, 3, 1, 5, 4, 6],
+            "OKAY": [3, 6, 2, 5, 4, 1],
+            "WAIT": [6, 1, 3, 4, 2, 5],
+            "PRESS": [4, 2, 5, 6, 1, 3],
+            "YOU": [3, 4, 6, 1, 2, 5],
+            "YOU ARE": [2, 6, 3, 5, 1, 4],
+            "YOUR": [4, 1, 5, 6, 3, 2],
+            "YOU'RE": [5, 4, 2, 1, 6, 3],
+            "UR": [1, 3, 2, 4, 5, 6],
+            "U": [6, 3, 4, 2, 1, 5],
+            "UH HUH": [3, 2, 4, 1, 5, 6],
+            "UH UH": [5, 4, 3, 6, 1, 2],
+            "WHAT?": [4, 1, 2, 3, 5, 6],
+            "DONE": [2, 6, 5, 3, 1, 4],
+            "NEXT": [5, 2, 4, 3, 6, 1],
+            "HOLD": [4, 5, 6, 1, 2, 3],
+            "SURE": [3, 4, 1, 6, 2, 5],
+            "LIKE": [1, 4, 6, 5, 3, 2],
+        };
+        function getNum(button) {
+            return numTable[button.label][button.position];
+        }
+        let sum = getNum(this.pressedButtons[0]) + getNum(this.pressedButtons[1])
+            + getNum(this.pressedButtons[2]) + getNum(this.pressedButtons[3])
+            + getNum(this.stageThreeReferenceButton) + getNum(this.stageFourReferenceButton)
+            + this.stageTwoNumber;
+        return this.getStageTwoChartPosition(sum % 60 + 1);
     }
 }
